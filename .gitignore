@@ -1,0 +1,9 @@
+*.egg-info
+.*_cache
+.coverage
+.venv
+__pycache__
+pip-wheel-metadata
+
+/dist
+/results

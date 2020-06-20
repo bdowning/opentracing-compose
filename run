@@ -1,0 +1,41 @@
+#!/bin/bash
+
+usage=()
+
+usage+=("  $0 tests - run tests")
+tests() {
+    poetry run pytest
+    lint
+}
+
+usage+=("  $0 refmt - reformat code")
+refmt() {
+    poetry run isort opentracing_compose/**.py tests/**.py
+    poetry run black opentracing_compose tests
+}
+
+usage+=("  $0 lint - run linting")
+lint() {
+    poetry run flake8 opentracing_compose tests
+    poetry run mypy opentracing_compose/**.py tests/**.py
+    poetry run black --check opentracing_compose tests
+    poetry run isort --check-only opentracing_compose/**.py tests/**.py
+}
+
+usage+=("  $0 bump2version {major|minor|patch} - bump version number")
+bump2version() {
+    poetry run bump2version "$@"
+}
+
+cmd=$1
+shift
+
+if ! declare -f "$cmd" >/dev/null; then
+    echo "Usage:"
+    for line in "${usage[@]}"; do echo "$line"; done
+    exit 1
+fi
+
+set -o xtrace
+
+"$cmd" "$@"

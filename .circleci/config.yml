@@ -1,0 +1,78 @@
+version: 2.1
+
+jobs:
+  test:
+    parameters:
+      python_version:
+        type: string
+        default: "3.8"
+
+    docker:
+      - image: circleci/python:<< parameters.python_version >>
+        environment:
+          PGPORT: 5432
+      - image: postgres:12
+        environment:
+          POSTGRES_PASSWORD: password
+
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - poetry-<< parameters.python_version >>-{{ checksum "poetry.lock" }}
+      - run: poetry install
+      - save_cache:
+          key: poetry-<< parameters.python_version >>-{{ checksum "poetry.lock" }}
+          paths:
+            - .venv
+
+      - run:
+          command: poetry run flake8 opentracing_compose tests
+          when: always
+      - run:
+          command: poetry run mypy opentracing_compose/**.py tests/**.py
+          when: always
+      - run:
+          command: poetry run black --check opentracing_compose tests
+          when: always
+      - run:
+          command: poetry run isort --check-only opentracing_compose/**.py tests/**.py
+          when: always
+      - run:
+          command: poetry run pytest
+          when: always
+
+      - store_test_results:
+          path: results
+      - store_artifacts:
+          path: results/pytest/cov_html
+          destination: pytest-coverage
+
+      - run: poetry build
+
+  publish:
+    docker:
+      - image: circleci/python:latest
+    steps:
+      - checkout
+      - run: poetry build
+      - run: poetry publish
+
+workflows:
+  main:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
+          matrix:
+            parameters:
+              python_version: ["3.7", "3.8"]
+      - publish:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
