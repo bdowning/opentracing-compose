@@ -99,12 +99,19 @@ class ComposedTracer(Tracer):
         start_time=None,
         ignore_active_span=False,
     ) -> ComposedSpan:
-        if child_of:
-            parent_contexts = child_of.composed_contexts
+        parent = child_of
+
+        if not ignore_active_span and not parent and self.active_span is not None:
+            parent = self.active_span
+
+        if parent:
+            parent_contexts = parent.composed_contexts
         else:
             parent_contexts = self._none_composed_contexts
+
         if references:
             raise Exception("Unimplemented")
+
         spans = [
             tracer.start_span(
                 operation_name=operation_name,
@@ -112,7 +119,7 @@ class ComposedTracer(Tracer):
                 references=references,
                 tags=tags,
                 start_time=start_time,
-                ignore_active_span=ignore_active_span,
+                ignore_active_span=True,
             )
             for tracer, parent in zip(self._composed_tracers, parent_contexts)
         ]
