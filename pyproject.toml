@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "opentracing-compose"
-version = "0.1.0"
+version = "0.1.1"
 description = "Opentracing tracer that composes other tracers"
 authors = ["Brian Downing <bdowning@lavos.net>"]
 license = "MIT"
